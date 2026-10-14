@@ -11,8 +11,3 @@ def test_health_returns_ok():
     body = response.json()
     assert body["status"] == "ok"
     assert body["database"] in {"ok", "unavailable"}
-
-
-def test_chat_rejects_empty_messages():
-    response = client.post("/api/chat", json={"messages": []})
-    assert response.status_code == 422

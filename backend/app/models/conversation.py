@@ -15,6 +15,9 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
     title: Mapped[str] = mapped_column(String(200), default="Nouvelle conversation")
     # Valeurs calculées côté Python : en async, relire une valeur générée par la base
     # déclencherait un chargement implicite (interdit).

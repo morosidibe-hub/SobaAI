@@ -20,20 +20,35 @@ def make_title(first_message: str) -> str:
     return text[: TITLE_MAX_LENGTH - 1].rstrip() + "…"
 
 
-async def list_conversations(db: AsyncSession) -> Sequence[Conversation]:
-    result = await db.scalars(select(Conversation).order_by(Conversation.updated_at.desc()))
+async def list_conversations(db: AsyncSession, user_id: uuid.UUID) -> Sequence[Conversation]:
+    result = await db.scalars(
+        select(Conversation)
+        .where(Conversation.user_id == user_id)
+        .order_by(Conversation.updated_at.desc())
+    )
     return result.all()
 
 
 async def get_conversation(
-    db: AsyncSession, conversation_id: uuid.UUID, *, with_messages: bool = False
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID,
+    *,
+    with_messages: bool = False,
 ) -> Conversation | None:
-    options = [selectinload(Conversation.messages)] if with_messages else []
-    return await db.get(Conversation, conversation_id, options=options)
+    """Renvoie la conversation seulement si elle appartient à `user_id`."""
+    query = select(Conversation).where(
+        Conversation.id == conversation_id, Conversation.user_id == user_id
+    )
+    if with_messages:
+        query = query.options(selectinload(Conversation.messages))
+    return await db.scalar(query)
 
 
-async def create_conversation(db: AsyncSession, first_message: str) -> Conversation:
-    conversation = Conversation(title=make_title(first_message))
+async def create_conversation(
+    db: AsyncSession, user_id: uuid.UUID, first_message: str
+) -> Conversation:
+    conversation = Conversation(user_id=user_id, title=make_title(first_message))
     db.add(conversation)
     await db.commit()
     return conversation

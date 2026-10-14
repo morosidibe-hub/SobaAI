@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getConversation, streamChat } from '../services/api'
 import type { ChatMessage } from '../types/chat'
@@ -106,6 +106,9 @@ export function useChat({ onReplyDone }: Options = {}) {
   )
 
   const stop = useCallback(() => abortRef.current?.abort(), [])
+
+  // Déconnexion (démontage du composant) pendant une réponse : on coupe le streaming.
+  useEffect(() => () => abortRef.current?.abort(), [])
 
   return { conversationId, messages, isStreaming, isLoading, send, stop, open, reset }
 }

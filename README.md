@@ -28,8 +28,12 @@ SobaAI/
 
 ```bash
 cp .env.example .env
-# puis renseignez ANTHROPIC_API_KEY dans .env
+# puis renseignez dans .env :
+#   ANTHROPIC_API_KEY  (clé API Claude)
+#   JWT_SECRET         (python -c "import secrets; print(secrets.token_urlsafe(32))")
 ```
+
+Sans `JWT_SECRET`, une clé temporaire est générée à chaque démarrage du backend : tout le monde est alors déconnecté à chaque redémarrage.
 
 ### 2. Base de données
 
@@ -81,15 +85,21 @@ docker compose --profile full up --build
 
 | Méthode | Route | Description |
 |---|---|---|
-| GET | `/api/health` | État de l'API et de la base |
+| GET | `/api/health` | État de l'API et de la base (public) |
+| POST | `/api/auth/register` | `{ "email", "password" }` (8 caractères min.) → crée le compte et ouvre la session |
+| POST | `/api/auth/login` | `{ "email", "password" }` → ouvre la session |
+| POST | `/api/auth/logout` | Ferme la session |
+| GET | `/api/auth/me` | Utilisateur connecté |
 | POST | `/api/chat` | `{ "conversation_id"?: "...", "message": "..." }` → réponse texte en streaming. Sans `conversation_id`, une conversation est créée et son id est renvoyé dans l'en-tête `X-Conversation-Id`. |
 | GET | `/api/conversations` | Liste des conversations (plus récente d'abord) |
 | GET | `/api/conversations/{id}` | Une conversation et ses messages |
 | DELETE | `/api/conversations/{id}` | Supprime une conversation |
 
+Toutes les routes hors `/api/health` et `/api/auth/*` exigent d'être connecté. La session est un jeton JWT stocké dans un cookie `httpOnly` (`SameSite=Lax`, `Secure` si `COOKIE_SECURE=true`). Chaque utilisateur ne voit que ses propres conversations.
+
 ## Feuille de route
 
 - [x] MVP : chat en streaming
 - [x] Sauvegarde des conversations en base
-- [ ] Authentification
+- [x] Authentification (email + mot de passe)
 - [ ] Recherche dans des documents (RAG avec pgvector)

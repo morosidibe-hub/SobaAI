@@ -1,3 +1,9 @@
+export interface User {
+  id: string
+  email: string
+  created_at: string
+}
+
 export type Role = 'user' | 'assistant'
 
 export interface ChatMessage {
